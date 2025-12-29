@@ -12,7 +12,9 @@ public class BulletSpawner : MonoBehaviour
 
     private List<GameObject> bulletList = new List<GameObject>();
     private Vector3 targetShootPosition;
+
     private bool isFiring = false;
+    private bool isWaitingForReturn = false;
 
     private Vector3 shootingPoint => transform.position;
 
@@ -23,15 +25,24 @@ public class BulletSpawner : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0) && bulletList.Count > 0)
+        if (Input.GetMouseButtonDown(0)
+            && bulletList.Count == bulletCount
+            && !isFiring
+            && !isWaitingForReturn)
         {
-            targetShootPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            targetShootPosition.z = 0;
-            isFiring = true;
+            Vector3 clickWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            clickWorldPos.z = 0;
+
+            if (clickWorldPos.y > shootingPoint.y + 0.2f)
+            {
+                targetShootPosition = clickWorldPos;
+                isFiring = true;
+            }
         }
 
         MoveBulletsInQueue();
         CheckAndShoot();
+        CheckAllBulletsReturned();
     }
 
     void SpawnInitialBullets()
@@ -48,9 +59,6 @@ public class BulletSpawner : MonoBehaviour
     {
         for (int i = 0; i < bulletList.Count; i++)
         {
-            if (bulletList[i] == null) continue;
-
-            // Đích đến là vị trí xếp hàng sau shootingPoint
             Vector3 targetPos = shootingPoint + Vector3.left * spacing * i;
 
             bulletList[i].transform.position = Vector3.MoveTowards(
@@ -67,27 +75,47 @@ public class BulletSpawner : MonoBehaviour
 
         GameObject bulletA = bulletList[0];
 
-        // Chỉ bắn khi viên đạn đã về tới vị trí đầu hàng (Shooting Point)
         if (Vector3.Distance(bulletA.transform.position, shootingPoint) < 0.05f)
         {
             BulletMovement movement = bulletA.GetComponent<BulletMovement>();
             if (movement == null) movement = bulletA.AddComponent<BulletMovement>();
 
-            // Gửi 'this' vào để viên đạn biết quay về đâu
             movement.Launch(targetShootPosition, bulletFlightSpeed, this);
 
             bulletList.RemoveAt(0);
 
-            if (bulletList.Count == 0) isFiring = false;
+            if (bulletList.Count == 0)
+            {
+                isFiring = false;
+                isWaitingForReturn = true;
+            }
         }
     }
 
-    // Hàm quan trọng để thu hồi đạn
     public void ReturnBulletToQueue(GameObject bullet)
     {
         if (!bulletList.Contains(bullet))
         {
             bulletList.Add(bullet);
         }
+    }
+
+    void CheckAllBulletsReturned()
+    {
+        if (!isWaitingForReturn) return;
+
+        if (bulletList.Count < bulletCount) return;
+
+        for (int i = 0; i < bulletList.Count; i++)
+        {
+            Vector3 targetPos = shootingPoint + Vector3.left * spacing * i;
+
+            if (Vector3.Distance(bulletList[i].transform.position, targetPos) > 0.05f)
+            {
+                return;
+            }
+        }
+
+        isWaitingForReturn = false;
     }
 }
