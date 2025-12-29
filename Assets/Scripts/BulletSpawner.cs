@@ -103,7 +103,6 @@ public class BulletSpawner : MonoBehaviour
     void CheckAllBulletsReturned()
     {
         if (!isWaitingForReturn) return;
-
         if (bulletList.Count < bulletCount) return;
 
         for (int i = 0; i < bulletList.Count; i++)
@@ -111,11 +110,19 @@ public class BulletSpawner : MonoBehaviour
             Vector3 targetPos = shootingPoint + Vector3.left * spacing * i;
 
             if (Vector3.Distance(bulletList[i].transform.position, targetPos) > 0.05f)
-            {
                 return;
-            }
         }
 
         isWaitingForReturn = false;
+        OnTurnEnded();
+    }
+
+    void OnTurnEnded()
+    {
+        Block[] blocks = FindObjectsOfType<Block>();
+        foreach (Block block in blocks)
+        {
+            block.MoveDownTween(1.18f, 0.25f);
+        }
     }
 }

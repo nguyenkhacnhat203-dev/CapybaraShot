@@ -11,9 +11,7 @@ public class BulletMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0;
-
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-
         transform.rotation = Quaternion.identity;
     }
 
@@ -24,7 +22,6 @@ public class BulletMovement : MonoBehaviour
 
         Vector2 direction = (targetPos - transform.position).normalized;
         rb.velocity = direction * speed;
-
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -37,9 +34,7 @@ public class BulletMovement : MonoBehaviour
             Vector2 normal = ((Vector2)transform.position - closestPoint).normalized;
             if (normal == Vector2.zero) return;
 
-            Vector2 reflectDir = Vector2.Reflect(rb.velocity, normal);
-            rb.velocity = reflectDir;
-
+            rb.velocity = Vector2.Reflect(rb.velocity, normal);
         }
         else if (other.CompareTag("Ground"))
         {
@@ -47,8 +42,7 @@ public class BulletMovement : MonoBehaviour
             isReturning = true;
 
             transform.rotation = Quaternion.identity;
-
-            spawner.ReturnBulletToQueue(this.gameObject);
+            spawner.ReturnBulletToQueue(gameObject);
         }
     }
 }
