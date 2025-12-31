@@ -35,6 +35,14 @@ public class BulletMovement : MonoBehaviour
             if (normal == Vector2.zero) return;
 
             rb.velocity = Vector2.Reflect(rb.velocity, normal);
+        }  if (other.CompareTag("Wood"))
+        {
+            AudioManager.Instance.HitBox();
+            Vector2 closestPoint = other.ClosestPoint(transform.position);
+            Vector2 normal = ((Vector2)transform.position - closestPoint).normalized;
+            if (normal == Vector2.zero) return;
+
+            rb.velocity = Vector2.Reflect(rb.velocity, normal);
         }
         else if (other.CompareTag("Ground"))
         {

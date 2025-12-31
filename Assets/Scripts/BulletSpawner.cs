@@ -5,12 +5,12 @@ public class BulletSpawner : MonoBehaviour
 {
     [Header("Cấu hình")]
     public GameObject bulletPrefab;
-    public int bulletCount = 5;
+    public int bulletCount = 5;             
     public float spacing = 1.2f;
     public float queueSpeed = 10f;
     public float bulletFlightSpeed = 20f;
 
-    private List<GameObject> bulletList = new List<GameObject>();
+    private List<GameObject> bulletList = new List<GameObject>(); 
     private Vector3 targetShootPosition;
 
     private bool isFiring = false;
@@ -21,6 +21,8 @@ public class BulletSpawner : MonoBehaviour
     private void Start()
     {
         SpawnInitialBullets();
+
+        UIManager.Instance.UpdateBulletCount(bulletCount);
     }
 
     private void Update()
@@ -47,12 +49,32 @@ public class BulletSpawner : MonoBehaviour
 
     void SpawnInitialBullets()
     {
+        bulletList.Clear();
+
         for (int i = 0; i < bulletCount; i++)
         {
-            Vector3 spawnPos = shootingPoint + Vector3.left * spacing * i;
-            GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
-            bulletList.Add(bullet);
+            CreateNewBullet(i);
         }
+    }
+
+    void CreateNewBullet(int index)
+    {
+        Vector3 spawnPos = shootingPoint + Vector3.left * spacing * index;
+        GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
+
+        BulletMovement movement = bullet.GetComponent<BulletMovement>();
+        if (movement == null)
+            movement = bullet.AddComponent<BulletMovement>();
+
+        bulletList.Add(bullet);
+    }
+
+    public void AddBullet()
+    {
+        bulletCount++;               
+        CreateNewBullet(bulletList.Count);
+
+        UIManager.Instance.UpdateBulletCount(bulletCount);
     }
 
     void MoveBulletsInQueue()
@@ -60,7 +82,6 @@ public class BulletSpawner : MonoBehaviour
         for (int i = 0; i < bulletList.Count; i++)
         {
             Vector3 targetPos = shootingPoint + Vector3.left * spacing * i;
-
             bulletList[i].transform.position = Vector3.MoveTowards(
                 bulletList[i].transform.position,
                 targetPos,
@@ -78,11 +99,9 @@ public class BulletSpawner : MonoBehaviour
         if (Vector3.Distance(bulletA.transform.position, shootingPoint) < 0.05f)
         {
             BulletMovement movement = bulletA.GetComponent<BulletMovement>();
-            if (movement == null) movement = bulletA.AddComponent<BulletMovement>();
-
             movement.Launch(targetShootPosition, bulletFlightSpeed, this);
 
-            bulletList.RemoveAt(0);
+            bulletList.RemoveAt(0); 
 
             if (bulletList.Count == 0)
             {
@@ -108,7 +127,6 @@ public class BulletSpawner : MonoBehaviour
         for (int i = 0; i < bulletList.Count; i++)
         {
             Vector3 targetPos = shootingPoint + Vector3.left * spacing * i;
-
             if (Vector3.Distance(bulletList[i].transform.position, targetPos) > 0.05f)
                 return;
         }
@@ -124,5 +142,15 @@ public class BulletSpawner : MonoBehaviour
         {
             block.MoveDownTween(1.18f, 0.25f);
         }
+
+        Capypara_AddBulet[] capyparas = FindObjectsOfType<Capypara_AddBulet>();
+        foreach (Capypara_AddBulet capy in capyparas)
+        {
+            capy.MoveDownTween(1.18f, 0.25f);
+        }
+
+        BlockManager blockManager = FindAnyObjectByType<BlockManager>();
+        if (blockManager != null)
+            blockManager.SpawnBlocks();
     }
 }
